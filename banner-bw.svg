@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="100%" height="100%">
+  <defs>
+    <!-- Subtle Blueprint Grid Pattern -->
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#262626" stroke-width="0.7" />
+    </pattern>
+  </defs>
+
+  <!-- Deep Monochrome Background -->
+  <rect width="900" height="240" rx="8" fill="#0a0a0a" stroke="#404040" stroke-width="2" />
+  <rect width="900" height="240" rx="8" fill="url(#grid)" />
+
+  <!-- Top Technical Blueprint Header -->
+  <text x="30" y="30" fill="#737373" font-family="monospace" font-size="11" font-weight="bold">// ARCHITECTURE: ZERO-PII-PHISHING-ENGINE (PROD_V1)</text>
+  <line x1="30" y1="40" x2="870" y2="40" stroke="#262626" stroke-width="1" />
+
+  <!-- Pipeline Main Connecting Trunk Line -->
+  <line x1="120" y1="135" x2="780" y2="135" stroke="#525252" stroke-width="2" stroke-dasharray="6 4" />
+
+  <!-- NODE 1: Raw Email -->
+  <g transform="translate(50, 80)">
+    <rect width="140" height="110" rx="6" fill="#171717" stroke="#e5e5e5" stroke-width="1.5" />
+    <text x="70" y="40" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">[ RAW EMAIL ]</text>
+    <line x1="20" y1="55" x2="120" y2="55" stroke="#404040" stroke-width="1" />
+    <text x="70" y="75" fill="#a3a3a3" font-family="sans-serif" font-size="12" text-anchor="middle">Untrusted Payload</text>
+    <text x="70" y="93" fill="#737373" font-family="monospace" font-size="10" text-anchor="middle">Spoofed / Bait</text>
+  </g>
+
+  <!-- Flow Arrow 1 -->
+  <text x="215" y="140" fill="#ffffff" font-family="monospace" font-size="20" font-weight="bold">──&gt;</text>
+
+  <!-- NODE 2: Zero-PII Sanitizer -->
+  <g transform="translate(260, 70)">
+    <rect width="160" height="130" rx="6" fill="#171717" stroke="#ffffff" stroke-width="2" stroke-dasharray="4 2" />
+    <text x="80" y="40" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">[ ZERO-PII ]</text>
+    <line x1="20" y1="55" x2="140" y2="55" stroke="#404040" stroke-width="1" />
+    <text x="80" y="75" fill="#e5e5e5" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Sanitizer Engine</text>
+    <text x="80" y="95" fill="#a3a3a3" font-family="monospace" font-size="11" text-anchor="middle">SHA-256 Hashing</text>
+    <text x="80" y="112" fill="#737373" font-family="monospace" font-size="10" text-anchor="middle">Strip Headers &amp; IP</text>
+  </g>
+
+  <!-- Flow Arrow 2 -->
+  <text x="445" y="140" fill="#ffffff" font-family="monospace" font-size="20" font-weight="bold">──&gt;</text>
+
+  <!-- NODE 3: Qwen vLLM Engine -->
+  <g transform="translate(490, 65)">
+    <rect width="180" height="140" rx="6" fill="#000000" stroke="#ffffff" stroke-width="2.5" />
+    <text x="90" y="38" fill="#ffffff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">[ vLLM ENGINE ]</text>
+    <line x1="20" y1="52" x2="160" y2="52" stroke="#525252" stroke-width="1" />
+    <text x="90" y="75" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle">Qwen2.5-7B QLoRA</text>
+    <text x="90" y="95" fill="#a3a3a3" font-family="monospace" font-size="11" text-anchor="middle">Comprehensive MLP</text>
+    <text x="90" y="112" fill="#a3a3a3" font-family="monospace" font-size="11" text-anchor="middle">Guided JSON Mode</text>
+    <text x="90" y="128" fill="#737373" font-family="monospace" font-size="10" text-anchor="middle">4-bit AWQ / 16-bit</text>
+  </g>
+
+  <!-- Flow Arrow 3 -->
+  <text x="695" y="140" fill="#ffffff" font-family="monospace" font-size="20" font-weight="bold">──&gt;</text>
+
+  <!-- NODE 4: Verified JSON Shield -->
+  <g transform="translate(740, 80)">
+    <rect width="110" height="110" rx="6" fill="#171717" stroke="#ffffff" stroke-width="2" />
+    <text x="55" y="42" fill="#ffffff" font-family="monospace" font-size="18" font-weight="bold" text-anchor="middle">JSON [✓]</text>
+    <line x1="15" y1="58" x2="95" y2="58" stroke="#404040" stroke-width="1" />
+    <text x="55" y="78" fill="#e5e5e5" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle">Pydantic v2</text>
+    <text x="55" y="95" fill="#737373" font-family="monospace" font-size="10" text-anchor="middle">Strict Schema</text>
+  </g>
+
+  <!-- Bottom Blueprint Framing Ticks -->
+  <line x1="10" y1="230" x2="30" y2="230" stroke="#404040" stroke-width="2" />
+  <line x1="870" y1="230" x2="890" y2="230" stroke="#404040" stroke-width="2" />
+</svg>

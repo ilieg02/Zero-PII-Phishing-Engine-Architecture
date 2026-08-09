@@ -1,0 +1,26 @@
+Tue Aug 25 14:22:15 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 535.104.05              Driver Version: 535.104.05   CUDA Version: 12.2     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|=========================================+========================+======================|
+|   0  NVIDIA RTX 4090                Off | 00000000:01:00.0   Off |                  Off |
+| 31%   44C    P2             112W / 450W |   5942MiB / 24564MiB |      98%      Default |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A      41992      C   python3 eval_benchmark.py                   5880MiB |
+|    0   N/A  N/A       1124      G   /usr/lib/xorg/Xorg                            52MiB |
++-----------------------------------------------------------------------------------------+
+
+[Test Execution Summary]
+Model ID: Ilieg/qwen2.5-7b-phishing-standard-merged-16bit
+Total VRAM Allocated: 5.88 GB
+Quantization Protocol: 4-bit AWQ (Dynamically Loaded)
+Context Window Reserved: 2048 Tokens
+Inference Latency Target (Fast Mode): PASSED (254.12 ms)

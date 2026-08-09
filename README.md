@@ -1,5 +1,5 @@
 # 🛡️ Enterprise AI Threat Engine: Zero-PII Phishing Risk Scoring Service
-<p align="center"> <img src="docs/banner-bw.svg" alt="System Banner" width="100%" />
+<p align="center"> <img src="banner-bw.svg" alt="System Banner" width="100%" />
 <p align="center">
   <a href="https://huggingface.co/Ilieg/qwen2.5-7b-phishing-standard-merged-16bit">
     <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Fine--Tuned%20Model-ffc107?style=for-the-badge" alt="Hugging Face Model">

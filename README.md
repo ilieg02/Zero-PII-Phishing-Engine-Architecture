@@ -102,12 +102,12 @@ The API accepts structured JSON requests and returns deterministic threat verdic
 
 
 # 1. Clone the repository
-git clone https://github.com/ilieg02/Zero-PII-Phishing-Engine-Architecture.git
-cd Zero-PII-Phishing-Engine-Architecture
+- git clone https://github.com/ilieg02/Zero-PII-Phishing-Engine-Architecture.git
+- cd Zero-PII-Phishing-Engine-Architecture
 
 # 2. Create and activate a virtual environment (Python 3.10)
-python3.10 -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+- python3.10 -m venv .venv
+- source .venv/bin/activate  # or .venv\Scripts\activate on Windows
 
 # 3. Install dependencies
 pip install -r requirements.txt

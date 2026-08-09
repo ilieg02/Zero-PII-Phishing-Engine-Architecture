@@ -1,5 +1,5 @@
 # 🛡️ Enterprise AI Threat Engine: Zero-PII Phishing Risk Scoring Service
-
+<p align="center"> <img src="docs/banner-bw.svg" alt="System Banner" width="100%" />
 <p align="center">
   <a href="https://huggingface.co/Ilieg/qwen2.5-7b-phishing-standard-merged-16bit">
     <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Fine--Tuned%20Model-ffc107?style=for-the-badge" alt="Hugging Face Model">
@@ -31,36 +31,6 @@ Standard commercial LLM endpoints introduce severe enterprise risks: **PII data 
 
 ---
 
-## 🏗️ System Architecture & Data Flow
-
-mermaid
-graph TD
-    A[Inbound Enterprise Email] --> B[FastAPI Gateway Boundary]
-    
-    subgraph Perimeter Defense & Sanitization
-        B --> C{Length & Perimeter Check}
-        C -->|< 10 Chars| D[422 Contract Violation]
-        C -->|Valid Payload| E[Zero-PII Cryptographic Sanitizer]
-        E -->|SHA-256 Hashes IPs/Headers| F[Sanitized Payload Contract]
-    end
-    
-    subgraph GPU Serving Layer - vLLM Engine
-        F --> G[vLLM Scheduler & PagedAttention]
-        G --> H[Qwen2.5-7B 4-bit AWQ Weights]
-        H --> I[XGrammar FSM Mask Engine]
-    end
-    
-    subgraph Validated Output Generation
-        I -->|Dual-Mode Decoding| J{Mode Router}
-        J -->|Fast Mode| K[Threat Verdict JSON - 256 tokens]
-        J -->|Think Mode| L[Deep Reasoning JSON - 512 tokens]
-    end
-    
-    K --> M[SIEM / SOAR Pipeline]
-    L --> M
-
-
-
 ## 📊 Evaluation & Benchmark Results
 
 Evaluated on a held-out, deduplicated unseen test split ($N = 500$ emails) consisting of real-world corporate communications, spear-phishing lures, and false-positive traps:
@@ -80,9 +50,9 @@ Evaluated on a held-out, deduplicated unseen test split ($N = 500$ emails) consi
 
 ## Key Engineering Takeaway
 
-** While attention-only LoRA captures surface-level keyword indicators, expanding trainable parameters to MLP projections (gate_proj, up_proj, down_proj) allows the model to learn complex semantic reasoning patterns (e.g., implicit urgency manipulation and brand impersonation), boosting Phishing F1-Score by +0.96% with negligible latency overhead (+5 ms).
+* While attention-only LoRA captures surface-level keyword indicators, expanding trainable parameters to MLP projections (gate_proj, up_proj, down_proj) allows the model to learn complex semantic reasoning patterns (e.g., implicit urgency manipulation and brand impersonation), boosting Phishing F1-Score by +0.96% with negligible latency overhead (+5 ms).
 
--    ** Note on Storage vs. Runtime VRAM: The weights published on Hugging Face are merged 16-bit bfloat16 files (15.2 GB on disk). When loaded for serving via 4-bit AWQ/Unsloth quantization, active runtime GPU memory consumption drops to ~5.9 GB VRAM, enabling deployment on cost-effective enterprise GPUs (e.g., RTX 4070 / L4).
+-  Note on Storage vs. Runtime VRAM: The weights published on Hugging Face are merged 16-bit bfloat16 files (15.2 GB on disk). When loaded for serving via 4-bit AWQ/Unsloth quantization, active runtime GPU memory consumption drops to ~5.9 GB VRAM, enabling deployment on cost-effective enterprise GPUs (e.g., RTX 4070 / L4).
 
 ## 🔌 API Contract Specifications
 
@@ -97,7 +67,7 @@ The API accepts structured JSON requests and returns deterministic threat verdic
 
 **Validated Threat Verdict Response (200 OK)**
 
-- ** {
+- {
   "status": "success",
   "mode_used": "fast",
   "safe_log_hash": "7776d3645028f2e975522eb8d551f2c4239565dc7482bafd246439942a23722a",
@@ -119,7 +89,7 @@ The API accepts structured JSON requests and returns deterministic threat verdic
 A standalone script is provided in this repository to independently verify the memory allocation and inference speed on our public Hugging Face weights.
 
 # 1. Install evaluation dependencies
-- ** pip install -r requirements.txt
+- pip install -r requirements.txt
 
 # 2. Run hardware verification and inference benchmark
-- ** python eval_benchmark.py
+- python eval_benchmark.py

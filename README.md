@@ -228,3 +228,54 @@ This project provided hands-on experience in:
 ```bash
 git clone https://github.com/ilieg02/Zero-PII-Phishing-Engine-Architecture.git
 cd Zero-PII-Phishing-Engine-Architecture
+
+Install Dependencies
+```bash
+python3.10 -m venv .venv
+source .venv/bin/activate
+ 
+```bash
+pip install -r requirements.txt
+```bash
+python eval_benchmark.py
+
+
+Public vs Private Components
+Public
+
+✅ Architecture Documentation
+
+✅ API Contracts
+
+✅ Evaluation Framework
+
+✅ Benchmarking Methodology
+
+✅ Design Decisions
+
+Private
+
+🔒 Production API Service
+
+🔒 Deployment Infrastructure
+
+🔒 Internal Security Controls
+
+🔒 Operational Configurations
+
+🔒 Testing Environment
+
+## Internship & Collaboration
+
+I'm currently seeking opportunities in:
+
+Software Engineering
+AI Engineering
+Machine Learning Engineering
+Cybersecurity Engineering
+
+- If you're a recruiter, engineer or researcher interested in AI systems, security infrastructure or privacy-preserving technology, feel free to connect.
+
+Built by Ilie Gabuja
+
+Privacy First. Security Always. Engineering Over Hype.

@@ -228,19 +228,22 @@ This project provided hands-on experience in:
 ```bash
 git clone https://github.com/ilieg02/Zero-PII-Phishing-Engine-Architecture.git
 cd Zero-PII-Phishing-Engine-Architecture
-
-Install Dependencies
+```
+## Install Dependencies
 ```bash
 python3.10 -m venv .venv
 source .venv/bin/activate
- 
+```
+
 ```bash
 pip install -r requirements.txt
+```
+
 ```bash
 python eval_benchmark.py
 
-
-Public vs Private Components
+```
+## Public vs Private Components
 Public
 
 ✅ Architecture Documentation

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/vLLM-High%20Throughput-722ed1?style=for-the-badge" alt="vLLM Serving">
   <img src="https://img.shields.io/badge/Pydantic-v2-E92063?style=for-the-badge&logo=pydantic&logoColor=white" alt="Pydantic v2">
 </p>
----
+
 
 ## Overview
 
@@ -58,7 +58,6 @@ before security verdicts are returned.
 - Reduced serving memory requirements from 14.2 GB to 5.9 GB using quantisation
 - Maintained inference latency at approximately 255 ms
 - Achieved deterministic schema-compliant JSON outputs for downstream integration
-- 
 ## Core Features
 
 ### Zero-PII Processing
@@ -90,7 +89,7 @@ before security verdicts are returned.
 
 ---
 
-Risk Scoring Output
+## Risk Scoring Output
 
 The private implementation repository contains the production application, testing infrastructure, deployment configuration and internal security controls.
 

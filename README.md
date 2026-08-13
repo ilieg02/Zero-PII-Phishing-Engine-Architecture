@@ -1,17 +1,20 @@
 # 🛡️ Zero-PII Phishing Risk Scoring Platform
 
 <p align="center">
-  banner-bw.svg
+  <img src="banner-bw.svg" alt="System Banner" width="100%" />
 </p>
 
 <p align="center">
-  https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white
-  https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white
-  <img src="https://img.shields.io/badge/Qwen2.5--urple?style=for-the-badge
-  <img src="https://img.shields.io/badge/vLLM-Optimised%20Serving-722ed1?the-badge
-  <img src="https://img.shields.io/badge/Docker-Containerised-2496ED?style=dge&logo=docker&logoColor=white
+  <a href="https://huggingface.co/Ilieg/qwen2.5-7b-phishing-standard-merged-16bit">
+    <img src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Fine--Tuned%20Model-ffc107?style=for-the-badge" alt="Hugging Face Model">
+  </a>
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/License-GPL--3.0-blue.svg?style=for-the-badge" alt="License: GPL-3.0">
+  </a>
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/vLLM-High%20Throughput-722ed1?style=for-the-badge" alt="vLLM Serving">
+  <img src="https://img.shields.io/badge/Pydantic-v2-E92063?style=for-the-badge&logo=pydantic&logoColor=white" alt="Pydantic v2">
 </p>
-
 ---
 
 ## Overview

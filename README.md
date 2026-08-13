@@ -51,7 +51,14 @@ The resulting architecture implements:
 before security verdicts are returned.
 
 ---
+## Key Results
 
+- Improved phishing classification accuracy from 82.40% to 97.80%
+- Increased phishing F1-score from 80.10% to 97.46%
+- Reduced serving memory requirements from 14.2 GB to 5.9 GB using quantisation
+- Maintained inference latency at approximately 255 ms
+- Achieved deterministic schema-compliant JSON outputs for downstream integration
+- 
 ## Core Features
 
 ### Zero-PII Processing
@@ -83,28 +90,6 @@ before security verdicts are returned.
 
 ---
 
-## System Architecture
-
-Incoming Email
-
-↓
-
-FastAPI Gateway
-
-↓
-
-Zero-PII Sanitisation Layer
-
-↓
-
-Qwen2.5-7B Model (vLLM)
-
-↓
-
-Structured Response Validation
-
-↓
-
 Risk Scoring Output
 
 The private implementation repository contains the production application, testing infrastructure, deployment configuration and internal security controls.
@@ -123,33 +108,19 @@ This public repository documents:
 
 ### AI & Machine Learning
 
-- Qwen2.5-7B
-- QLoRA
-- PEFT
-- Hugging Face
-- Unsloth
-- vLLM
+- Qwen2.5-7B | QLoRA | PEFT | Hugging Face | Unsloth | vLLM
 
 ### Backend Engineering
 
-- Python
-- FastAPI
-- Pydantic
-- REST APIs
+- Python | FastAPI | Pydantic | REST APIs
 
 ### Infrastructure
 
-- Docker
-- Linux
-- Git
-- GitHub
+- Docker | Linux | Git | GitHub
 
 ### Security
 
-- Threat Modelling
-- Privacy Engineering
-- Data Sanitisation
-- SHA-256 Hashing
+- Threat Modelling | Privacy Engineering | Data Sanitisation | SHA-256 Hashing
 
 ---
 

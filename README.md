@@ -21,6 +21,7 @@
 - [Overview](#overview)
 - [Why This Project Exists](#why-this-project-exists)
 - [Key Results](#key-results)
+- [Training & Evaluation Data](#training--evaluation-data)
 - [System Architecture](#system-architecture)
 - [Core Features](#core-features)
 - [Model Evaluation & Ablation Study](#model-evaluation--ablation-study)
@@ -38,7 +39,7 @@
 
 ## Overview
 
-**Zero-PII Phishing Risk Scoring Platform** is a privacy-preserving AI security system designed to analyse phishing threats while preventing sensitive information from ever reaching the inference layer.
+**Zero-PII Phishing Risk Scoring Platform** is a privacy-preserving AI security system designed to analyze phishing threats while preventing sensitive information from ever reaching the inference layer.
 
 The system combines:
 
@@ -55,11 +56,11 @@ to produce structured phishing risk assessments that can integrate with enterpri
 
 Most phishing detection systems focus on detection accuracy alone. This project explores a different engineering question:
 
-> How can AI systems identify phishing threats while minimising exposure of sensitive user information?
+> How can an AI system identify phishing threats while minimizing exposure of sensitive user information?
 
-The resulting architecture implements, in order, before any security verdict is returned:
+The resulting architecture implements, before a security verdict is returned:
 
-1. Zero-PII pre-processing
+1. Zero-PII preprocessing
 2. Structured AI outputs
 3. Deterministic validation
 4. High-throughput serving
@@ -71,9 +72,75 @@ The resulting architecture implements, in order, before any security verdict is 
 
 - Improved phishing classification accuracy from **82.40% → 97.80%**
 - Increased phishing F1-score from **80.10% → 97.46%**
-- Reduced serving memory requirements from **14.2 GB → 5.9 GB** via quantisation
-- Maintained inference latency at approximately **255 ms**
+- Reduced serving memory requirements from **14.2 GB → 5.9 GB** through 4-bit quantization
+- Maintained average inference latency at approximately **255 ms** in the 256-token benchmark
 - Achieved deterministic, schema-compliant JSON outputs for downstream integration
+
+> **Metric note:** the reported 97.80% figure is **accuracy**. The corresponding phishing F1-score is **97.46%**, and ROC-AUC is **0.9773**.
+
+---
+
+## Training & Evaluation Data
+
+### Training dataset
+
+The fine-tuning notebook runs in a Kaggle environment and loads the `train` split of:
+
+[`puyang2025/seven-phishing-email-datasets`](https://huggingface.co/datasets/puyang2025/seven-phishing-email-datasets)
+
+The dataset contains approximately **203k examples** in the available training corpus.
+
+The training code loads the split directly:
+
+```python
+dataset = load_dataset(
+    "puyang2025/seven-phishing-email-datasets",
+    split="train"
+)
+```
+
+Each example is converted into a ChatML conversation of the form:
+
+```text
+User:
+Classify this email as 'Phishing' or 'Benign'.
+
+Subject: ...
+Email Body:
+...
+
+Assistant:
+Phishing
+```
+
+The resulting conversations are tokenized with a maximum sequence length of **2048 tokens** before being passed to the QLoRA training pipeline.
+
+### Evaluation dataset
+
+Model evaluation is performed against a separate **held-out test split**, using the first **500 unseen examples**:
+
+```python
+val = load_dataset(
+    "puyang2025/seven-phishing-email-datasets",
+    split="test"
+)
+
+val = val.select(range(min(500, len(val))))
+```
+
+This evaluation set is kept separate from the training data used by the notebook.
+
+### Data processing
+
+The training pipeline performs:
+
+- ChatML formatting
+- Tokenization
+- Sequence truncation to 2048 tokens
+- Batched collation with dynamic padding
+- Label creation for causal language-model training
+
+The training notebook does **not** reduce the loaded training split to 3,999 examples; it trains from the dataset's `train` split.
 
 ---
 
@@ -88,17 +155,17 @@ graph TD
     classDef success fill:#52c41a,stroke:#237804,stroke-width:2px,color:#fff
 
     RAW["💌 Incoming Raw Email<br/>(Phishing bait, suspicious links, spoofed headers)"]
-    API["⚡ FastAPI Ingestion Gateway<br/>(Async traffic controller & rate limiter)"]
-    PII["🛡️ Zero-PII Sanitizer Engine<br/>• Strips IPs, Emails & Auth Tokens<br/>• Generates SHA-256 Audit Hash"]
-    LLM["🧠 vLLM Engine (Qwen2.5-7B)<br/>• 16-bit Merged / 4-bit AWQ<br/>• Guided JSON Grammar Enforcement<br/>• Fast Mode vs Think Mode"]
-    PYD["⚖️ Pydantic v2 Type Validator<br/>• Strict Schema & Type Checking<br/>• Risk Mapping: safe ➔ low | suspicious ➔ med | phishing ➔ high"]
-    OUT["🎯 JSON Risk Report + Execution Time (ms)<br/>(Ready for enterprise security SOAR/SIEM ingestion)"]
+    API["⚡ FastAPI Ingestion Gateway<br/>(Validation & request handling)"]
+    PII["🛡️ Zero-PII Sanitizer Engine<br/>• Strips or hashes sensitive metadata<br/>• Generates SHA-256 audit hash"]
+    LLM["🧠 vLLM Engine (Qwen2.5-7B)<br/>• Fine-tuned phishing model<br/>• 4-bit deployment path<br/>• Guided JSON decoding<br/>• Fast Mode vs Think Mode"]
+    PYD["⚖️ Pydantic v2 Validator<br/>• Strict schema/type validation"]
+    OUT["🎯 JSON Risk Report + Execution Time (ms)<br/>(Ready for SIEM/SOAR integration)"]
 
     RAW -->|"1. Ingest"| API
-    API -->|"2. Scrub & Hash"| PII
-    PII -->|"3. Sanitized Payload (Zero Data Leakage)"| LLM
-    LLM -->|"4. Raw Structured JSON"| PYD
-    PYD -->|"5. Final Output"| OUT
+    API -->|"2. Scrub / Hash"| PII
+    PII -->|"3. Sanitized payload"| LLM
+    LLM -->|"4. Structured output"| PYD
+    PYD -->|"5. Validated result"| OUT
 
     class RAW danger
     class PII shield
@@ -107,28 +174,71 @@ graph TD
     class OUT success
 ```
 
+### Model / optimization path
+
+```text
+Public phishing-email corpus
+            │
+            ▼
+     ChatML formatting
+            │
+            ▼
+      Tokenization
+            │
+            ▼
+      Qwen2.5-7B-Instruct
+            │
+            ▼
+     QLoRA fine-tuning
+       ┌────┴────┐
+       │         │
+    4-bit      LoRA
+   base        adapters
+  weights     trainable
+       │         │
+       └────┬────┘
+            ▼
+       Fine-tuned model
+            │
+            ▼
+     Merge to 16-bit
+            │
+            ▼
+     4-bit AWQ serving
+            │
+            ▼
+          vLLM
+            │
+            ▼
+    GPU / constrained hardware
+```
+
 ---
 
 ## Core Features
 
-**Zero-PII Processing**
+### Zero-PII Processing
+
 - SHA-256 hashing of sensitive metadata
-- Header sanitisation before inference
+- Header sanitization before inference
 - Privacy-preserving audit logging
 
-**Threat Classification**
+### Threat Classification
+
 - Fine-tuned Qwen2.5-7B model
 - QLoRA-based adaptation
 - Email phishing risk assessment
 - Social engineering detection
 
-**Production-Oriented Serving**
+### Production-Oriented Serving
+
 - FastAPI REST interface
-- Containerised deployment
+- Containerized deployment
 - vLLM inference engine
 - CPU fallback strategy
 
-**Reliability Controls**
+### Reliability Controls
+
 - Pydantic v2 validation
 - Structured JSON outputs
 - Contract-first API design
@@ -138,11 +248,15 @@ graph TD
 
 ## Model Evaluation & Ablation Study
 
+The ablation study compares two LoRA adapter configurations under the same training budget and evaluation procedure:
+
 | Architecture / Variant | Tuned Target Modules | Accuracy | Phishing F1 | ROC-AUC | Avg. Latency (256 tok) | VRAM Footprint |
-|---|---|---|---|---|---|---|
+|---|---|---:|---:|---:|---:|---:|
 | Qwen2.5-7B (Base, Zero-Shot) | None | 82.40% | 80.10% | 0.8310 | ~240 ms | 14.2 GB (16-bit) |
 | Standard LoRA (Attention-Only) | `q, k, v, o` | 97.00% | 96.50% | 0.9681 | ~250 ms | 5.8 GB (4-bit AWQ) |
-| **Comprehensive LoRA (Best)** | `q, k, v, o, gate, up, down` | **97.80%** | **97.46%** | **0.9773** | ~255 ms | 5.9 GB (4-bit AWQ) |
+| **Comprehensive LoRA** | `q, k, v, o, gate, up, down` | **97.80%** | **97.46%** | **0.9773** | **~255 ms** | **5.9 GB (4-bit AWQ)** |
+
+The reported fine-tuned-model evaluation uses **500 unseen test examples**.
 
 ```text
 ========================================================================================
@@ -151,7 +265,7 @@ graph TD
 
  Qwen2.5-7B (Base Zero-Shot)     ██████████████████████████████████████░░░░░░░  0.8310
  Standard LoRA (q, k, v, o)      █████████████████████████████████████████████  0.9681
- Comprehensive LoRA (All Layers) ██████████████████████████████████████████████ 0.9773 ★
+ Comprehensive LoRA (All Linear) ██████████████████████████████████████████████ 0.9773
 
 ========================================================================================
                       PHISHING F1-SCORE COMPARISON (HIGHER IS BETTER)
@@ -159,55 +273,167 @@ graph TD
 
  Qwen2.5-7B (Base Zero-Shot)     ████████████████████████████████████░░░░░░░░░  80.10%
  Standard LoRA (q, k, v, o)      █████████████████████████████████████████████  96.50%
- Comprehensive LoRA (All Layers) ██████████████████████████████████████████████ 97.46% ★
+ Comprehensive LoRA (All Linear) ██████████████████████████████████████████████ 97.46%
 ```
 
-**Key finding:** Expanding LoRA training beyond attention layers into MLP projections (`gate_proj`, `up_proj`, `down_proj`) improved phishing F1 performance while introducing minimal latency overhead — the model learns multi-hop semantic reasoning (e.g. urgency manipulation, brand impersonation) rather than just surface-level keywords.
+### Ablation finding
+
+Expanding LoRA training beyond attention projections into the MLP projections (`gate_proj`, `up_proj`, `down_proj`) improved the measured phishing F1-score from **96.50% to 97.46%** while increasing reported average latency by about **5 ms** and reported VRAM footprint by about **0.1 GB** in the 4-bit serving benchmark.
+
+The project uses this comparison to investigate whether adapting a broader set of linear projections helps the model learn the phishing-specific task beyond the behavior captured by attention-only adapters.
 
 ---
 
 ## Research & Design Commentary
 
-**Architectural shift: resilient infrastructure over wrappers.** The industry consensus has shifted — we no longer reward LLM wrappers, we reward resilient LLM infrastructure. A common junior-engineer pattern is to boot up an expensive GPU, load a model, and throw raw user text at it, hoping `json.loads()` magically works on the other side. This system was designed **contract-first**: the API contract was locked down, an automated test harness was built, and the entry point was hardened against malicious input — all before touching a single model weight.
+### Contract-first AI infrastructure
+
+The system was designed **contract-first**: API contracts, automated tests, and input boundaries were established before the model was integrated into the production path.
 
 | Dimension | Naive ML Approach | This Project's Approach |
 |---|---|---|
-| Schema Validation | Hopes the model returns JSON; parses with raw `json.loads()`. | Enforces a strict Pydantic v2 schema coupled with vLLM Guided Decoding (`xgrammar` backend). |
-| Failure Handling | Throws an unhandled HTTP 500 when the LLM hallucinates JSON syntax. | Fails fast at the boundary; prevents syntax hallucinations at the logits level. |
-| DoS Defense | Accepts unbounded input strings directly into model context. | Enforces a strict input-length boundary at the API routing layer (fast-fail). |
-| Observability | Logs raw text strings containing confidential emails and PII. | Hashes input payloads with SHA-256 for zero-PII, traceable logging. |
+| Schema Validation | Parses model text with raw `json.loads()` | Strict Pydantic v2 schema combined with vLLM guided decoding |
+| Failure Handling | Parsing failures surface as unhandled errors | Output structure is constrained during generation and validated afterward |
+| DoS Defense | Accepts unbounded input directly into model context | Enforces an input-length boundary at the API layer |
+| Observability | Logs raw confidential email content | Uses SHA-256 hashes for traceable, privacy-preserving logging |
 
-**Guided decoding.** LLMs are probabilistic text generators; even fine-tuned, they can hallucinate a missing comma or broken JSON bracket and crash a parser. vLLM's Guided Decoding passes a strict JSON schema directly into the model's sampling engine, masking output probabilities at the logits level — if the next token required for valid JSON is a quotation mark, its probability is forced to ~100%. Pydantic then validates the data *after* generation; Guided Decoding enforces the structure *during* generation.
+### Guided decoding
 
-**Data engineering.** Your model will always expose your data pipeline's flaws. Training data was drawn from respected public corpora (Enron, TREC 05/06/07, SpamAssassin, Nigerian Fraud, etc.), deduplicated with an O(1) SHA-256 cryptographic filter to guard against data/model poisoning (OWASP LLM04:2025), and standardized into ChatML format hard-mapped to the platform's output schema — teaching the model that anything other than the schema is incorrect. Bare-URL and tabular-feature datasets were intentionally rejected: the model is a natural-language email parser, not a URL or tabular classifier, and mixing in those formats causes catastrophic interference. The result: 3,999 deduplicated text-email records, split 80/10/10 into train/validation/test, with the test set locked away and never exposed during training.
+LLMs are probabilistic text generators. Even a fine-tuned model can occasionally produce malformed JSON.
 
-**Classical baseline first.** Before fine-tuning a 7B-parameter LLM, a classical baseline (91.25% accuracy, 0.91 F1) was established to confirm the data contained learnable signal and to set a concrete floor the fine-tuned model had to beat.
+vLLM guided decoding constrains token generation according to the expected output grammar/schema, while Pydantic validates the resulting object after generation.
 
-**Compute-constrained fine-tuning.** Using **Unsloth** and **QLoRA**, the model is aligned on a single free 16 GB Colab T4 GPU, loaded in 4-bit NormalFloat (NF4) precision with gradient checkpointing (up to 60% VRAM reduction). LoRA adapters are injected into *all* linear layers, not just attention — this parameter depth is what lets the model remap its natural-language outputs into the strict JSON schema. Rank `r=16`, alpha `α=16` strikes the balance between learning phishing-specific nuance and avoiding catastrophic forgetting.
+The two stages serve different purposes:
 
-**High-throughput serving.** vLLM's **PagedAttention** eliminates KV-cache memory waste via non-contiguous virtual memory blocks, and **continuous batching** dynamically injects new requests at the iteration level, reducing time-to-first-token.
+```text
+Model generation
+      │
+      ▼
+Guided decoding
+      │
+      ▼
+Structurally constrained JSON
+      │
+      ▼
+Pydantic validation
+      │
+      ▼
+Typed application object
+```
 
-**Why Qwen 2.5 7B in a Qwen 3.x world?** 7B parameters sits in a "Goldilocks zone" — enough reasoning depth for psychological threat intelligence (urgency, implicit threats) and strict JSON adherence, while fitting cleanly inside a free Colab T4's 16 GB VRAM in 4-bit. Newer models frequently break production training frameworks; Qwen 2.5 7B is fully optimized by Unsloth and vLLM, prioritizing ecosystem stability and deterministic behavior over chasing the newest release.
+### Data engineering
+
+The training notebook loads the `train` split from `puyang2025/seven-phishing-email-datasets`, formats `subject`, `text`, and `label` into ChatML, and tokenizes the resulting conversations.
+
+The evaluation code uses a separate `test` split and evaluates the first 500 examples as an unseen test set.
+
+This separation is important because model performance should be measured on data that was not used to update the model parameters.
+
+### Classical baseline
+
+Before interpreting the LLM results, the project established a classical baseline:
+
+- Accuracy: **91.25%**
+- Phishing F1-score: **0.91**
+
+The baseline provides a reference point for evaluating whether the LLM-based approach adds value relative to a simpler model.
+
+### Compute-constrained fine-tuning
+
+The fine-tuning pipeline uses **Unsloth** and **QLoRA** on a constrained GPU environment.
+
+The base Qwen2.5-7B-Instruct model is loaded in **4-bit NF4** form. The base weights remain frozen while LoRA adapters are trained.
+
+Two adapter configurations are compared:
+
+```text
+Standard LoRA
+├── q_proj
+├── k_proj
+├── v_proj
+└── o_proj
+
+Comprehensive LoRA
+├── q_proj
+├── k_proj
+├── v_proj
+├── o_proj
+├── gate_proj
+├── up_proj
+└── down_proj
+```
+
+Both configurations use:
+
+- `r = 16`
+- `lora_alpha = 16`
+- `lora_dropout = 0`
+- maximum sequence length: `2048`
+- maximum training steps: `300`
+- per-device batch size: `2`
+- gradient accumulation steps: `4`
+- learning rate: `2e-4`
+- 8-bit AdamW optimizer
+- Unsloth gradient checkpointing
+
+### High-throughput serving
+
+The production serving path uses vLLM.
+
+Key inference-system concepts include:
+
+- **PagedAttention** for efficient KV-cache memory management
+- **Continuous batching** for better utilization under concurrent requests
+- Quantized weights for reduced memory footprint
+- Guided decoding for structured outputs
+
+### Why Qwen2.5-7B?
+
+The project selected Qwen2.5-7B-Instruct as a practical model size for the available compute budget.
+
+The design goal was to retain useful language-model capability while keeping fine-tuning and deployment feasible on constrained GPU hardware.
 
 ---
 
 ## Mathematical Foundations
 
-**Contextual understanding (Scaled Dot-Product Attention):**
+### Scaled dot-product attention
 
-$$\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+$$
+\text{Attention}(Q,K,V)
+=
+\text{softmax}
+\left(
+\frac{QK^T}{\sqrt{d_k}}
+\right)V
+$$
 
-**Efficient fine-tuning (LoRA):**
+### LoRA
 
-$$W = W_0 + \Delta W = W_0 + \frac{\alpha}{r}(B \cdot A)$$
+$$
+W = W_0 + \Delta W
+  = W_0 + \frac{\alpha}{r}(B \cdot A)
+$$
 
-**Learning objective (Cross-Entropy Loss):**
+### Cross-entropy loss
 
-$$\mathcal{L}_{CE} = -\frac{1}{N}\sum_{i=1}^{N}\sum_{j=1}^{C} y_{i,j} \log(\hat{y}_{i,j})$$
+$$
+\mathcal{L}_{CE}
+=
+-\frac{1}{N}
+\sum_{i=1}^{N}
+\sum_{j=1}^{C}
+y_{i,j}\log(\hat{y}_{i,j})
+$$
 
-**Measuring success (F1 Score):**
+### F1 score
 
-$$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$$
+$$
+F_1 =
+2 \cdot
+\frac{\text{Precision}\cdot\text{Recall}}
+{\text{Precision}+\text{Recall}}
+$$
 
 ---
 
@@ -215,7 +441,7 @@ $$F_1 = 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \
 
 ```bash
 # Clone
-git clone https://github.com/ilieg02/Zero-PII-Phishing-Engine-Architecture.git
+git clone https://github.com/Ilieg02/Zero-PII-Phishing-Engine-Architecture.git
 cd Zero-PII-Phishing-Engine-Architecture
 
 # Install dependencies
@@ -231,16 +457,18 @@ python eval_benchmark.py
 
 ## Public vs Private Components
 
-This repository documents the system's design, methodology, and results. The production application itself lives in a private implementation repository.
+This repository documents the system's design, methodology, evaluation framework, and results. The production application itself lives in a private implementation repository.
 
-**Public (this repository)**
+### Public
+
 - ✅ Architecture documentation
 - ✅ API contracts
 - ✅ Evaluation framework
 - ✅ Benchmarking methodology
 - ✅ Design decisions
 
-**Private**
+### Private
+
 - 🔒 Production API service
 - 🔒 Deployment infrastructure
 - 🔒 Internal security controls
@@ -251,23 +479,27 @@ This repository documents the system's design, methodology, and results. The pro
 
 ## Technologies
 
-**AI & Machine Learning**
-Qwen2.5-7B · QLoRA · PEFT · Hugging Face · Unsloth · vLLM
+### AI & Machine Learning
 
-**Backend Engineering**
+Qwen2.5-7B · QLoRA · PEFT · Hugging Face · Unsloth · vLLM · PyTorch
+
+### Backend Engineering
+
 Python · FastAPI · Pydantic · REST APIs
 
-**Infrastructure**
-Docker · Linux · Git · GitHub
+### Infrastructure
 
-**Security**
-Threat Modelling · Privacy Engineering · Data Sanitisation · SHA-256 Hashing
+Docker · Linux · Git · GitHub · Kaggle
+
+### Security
+
+Threat Modeling · Privacy Engineering · Data Sanitization · SHA-256 Hashing
 
 ---
 
 ## Skills Demonstrated
 
-Software Engineering · Artificial Intelligence · Machine Learning · Cybersecurity · Python · FastAPI · Docker · REST APIs · Pydantic · MLOps · LLM Fine-Tuning · Privacy Engineering · System Design · Threat Modelling
+Software Engineering · Artificial Intelligence · Machine Learning · Cybersecurity · Python · FastAPI · Docker · REST APIs · Pydantic · MLOps · LLM Fine-Tuning · Privacy Engineering · System Design · Threat Modeling · Inference Optimization
 
 ---
 
@@ -278,11 +510,15 @@ This project provided hands-on experience in:
 - End-to-end AI system development
 - Dataset engineering
 - LLM fine-tuning
+- Parameter-efficient fine-tuning
+- Quantized model deployment
 - Model evaluation
+- Inference optimization
 - Backend API development
-- Containerisation
+- Containerization
 - Security-focused architecture
 - Privacy-preserving design
+- Performance tradeoff analysis
 
 ---
 
@@ -295,9 +531,10 @@ I'm currently seeking opportunities in:
 - Machine Learning Engineering
 - Cybersecurity Engineering
 
-If you're a recruiter, engineer, or researcher interested in AI systems, security infrastructure, or privacy-preserving technology, feel free to connect.
+If you're a recruiter, engineer, or researcher interested in AI systems, security infrastructure, inference optimization, or privacy-preserving technology, feel free to connect.
 
 **Built by Ilie Gabuja**
+
 *Privacy First. Security Always. Engineering Over Hype.*
 
 ---
